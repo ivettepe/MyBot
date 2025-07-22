@@ -1,0 +1,22 @@
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+
+### Maven ###
+/target/
+
+### IntelliJ IDEA ###
+.idea/
+/*.iml
+*.ipr
+*.iws
+
+### Logs ###
+*.log
+
+### Credentials ###
+/src/main/resources/credentials.json
+
+application.properties
