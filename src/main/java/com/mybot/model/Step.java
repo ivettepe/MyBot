@@ -7,5 +7,15 @@ public enum Step {
     CONTACT_METHOD,
     NAME,
     PHONE,
-    SERVICE
+    SERVICE,
+    SERVICES,
+    PROMOCODES,
+    FAQ,
+    DEMO,
+    GET_SERVICES,
+    TASK_DESCRIPTION,
+    MAIN_MENU,
+    PROMOCODE,
+    SAVE_OR_EDIT,
+    EDIT
 }

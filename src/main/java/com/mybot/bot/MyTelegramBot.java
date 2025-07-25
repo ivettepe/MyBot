@@ -19,6 +19,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     private final BotConfig config;
     private final BotCommandHandler commandHandler;
     private final BotStepHandler stepHandler;
+    private final BotQueryHandler queryHandler;
 
     @Override
     public String getBotUsername() {
@@ -44,6 +45,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             } else {
                 stepHandler.handle(update, this);
             }
+        } else if (update.hasCallbackQuery()) {
+            queryHandler.handle(update, this);
         }
     }
 }

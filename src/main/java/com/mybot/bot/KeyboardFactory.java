@@ -1,5 +1,6 @@
 package com.mybot.bot;
 
+import com.mybot.model.BotQuery;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -16,10 +17,50 @@ public class KeyboardFactory {
         return markup(List.of(row("📝 Оставить заявку", "📋 Узнать про услуги")), false);
     }
 
+    public ReplyKeyboard mainMenu2() {
+        return markup(List.of(row(BotQuery.SERVICES.getDescription()),
+                row(BotQuery.PROMOCODES.getDescription()),
+                row(BotQuery.FAQ.getDescription()),
+                row(BotQuery.DEMO.getDescription()),
+                row(BotQuery.GET_SERVICES.getDescription())), false);
+    }
+
     public ReplyKeyboard contactChoiceMenu() {
         return markup(List.of(
                 row(KeyboardButton.builder().text("📲 Поделиться контактом").requestContact(true).build()),
                 row(new KeyboardButton("✏️ Ввести вручную"))
+        ), true);
+    }
+
+
+    public ReplyKeyboard contactButton() {
+        return markup(List.of(
+                row(KeyboardButton.builder().text("📲 Поделиться контактом").requestContact(true).build())
+        ), true);
+    }
+
+
+    public ReplyKeyboard getServiceDialogMethod() {
+        return markup(List.of(
+                row(new KeyboardButton("Заполнить форму")),
+                row(new KeyboardButton("Связаться напрямую"))
+        ), true);
+    }
+
+    public ReplyKeyboard getApplicationButtons() {
+        return markup(List.of(
+                row(new KeyboardButton("Сохранить")),
+                row(new KeyboardButton("Внести изменения"))
+        ), true);
+    }
+
+    public ReplyKeyboard getEditFieldButtons() {
+        return markup(List.of(
+                row(new KeyboardButton("Имя")),
+                row(new KeyboardButton("Телефон")),
+                row(new KeyboardButton("Услуга")),
+                row(new KeyboardButton("Описание услуги")),
+                row(new KeyboardButton("Промокод"))
         ), true);
     }
 
@@ -29,6 +70,12 @@ public class KeyboardFactory {
                 row("🧩 Создание Mini Apps"),
                 row("🔧 Сопровождение и доработка"),
                 row("💡 Консультации и проектирование")
+        ), true);
+    }
+
+    public ReplyKeyboard skip() {
+        return markup(List.of(
+                row("Пропустить")
         ), true);
     }
 
