@@ -2,19 +2,17 @@ package com.mybot.bot;
 
 import com.mybot.model.Service;
 import com.mybot.model.Step;
-import com.mybot.model.UserSession;
 import com.mybot.service.BotService;
 import com.mybot.util.InlineKeyboardUtil;
 import com.mybot.util.MessageExecutorUtil;
+import com.mybot.util.ServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.MaybeInaccessibleMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import static com.mybot.model.BotQuery.*;
         import static java.lang.Math.toIntExact;
@@ -36,11 +34,8 @@ public class BotQueryHandler {
             getContactsHandle(chatId, msgId, bot);
         } else if (callData.equals(GET_FORM.getName())) {
             getFormHandle(chatId, msgId, bot);
-        } else if (isBotOrApps(callData)) {
-            Service service = getBotService(callData);
-            formBotOrAppsChoice(chatId, msgId, bot, service);
-        } else if (callData.equals(Service.ANOTHER_CHOICE.getName())) {
-            Service service = getBotService(callData);
+        } else if (ServiceUtil.isBotOrAppsByName(callData) || callData.equals(Service.ANOTHER_CHOICE.getName())) {
+            Service service = ServiceUtil.getBotService(callData);
             formBotOrAppsChoice(chatId, msgId, bot, service);
         } else {
             log.error("QueryHandler failed");
@@ -89,45 +84,6 @@ public class BotQueryHandler {
                 .build();
         MessageExecutorUtil.safeExecute(bot, reply);
 
-    }
-
-    private boolean isBotOrApps(String callData) {
-        return callData.equals(Service.INFO_BOT.getName()) ||
-                callData.equals(Service.SERVICE_BOT.getName()) ||
-                callData.equals(Service.AI_BOT.getName()) ||
-                callData.equals(Service.QUIZ_BOT.getName()) ||
-                callData.equals(Service.SHOP_BOT.getName()) ||
-                callData.equals(Service.MINI_APPS.getName()) ||
-                callData.equals(Service.ADMIN_BOT.getName()) ||
-                callData.equals(Service.NOTIFY_BOT.getName()) ||
-                callData.equals(Service.INTERNAL_BOT.getName()) ||
-                callData.equals(Service.INTEGRATION_BOT.getName());
-    }
-
-    private Service getBotService(String callData) {
-        if (callData.equals(Service.INFO_BOT.getName())) {
-            return Service.INFO_BOT;
-        } else if (callData.equals(Service.SERVICE_BOT.getName())) {
-            return Service.SERVICE_BOT;
-        } else if (callData.equals(Service.AI_BOT.getName())) {
-            return Service.AI_BOT;
-        } else if (callData.equals(Service.QUIZ_BOT.getName())) {
-            return Service.QUIZ_BOT;
-        } else if (callData.equals(Service.SHOP_BOT.getName())) {
-            return Service.SHOP_BOT;
-        } else if (callData.equals(Service.MINI_APPS.getName())) {
-            return Service.MINI_APPS;
-        } else if (callData.equals(Service.ADMIN_BOT.getName())) {
-            return Service.ADMIN_BOT;
-        } else if (callData.equals(Service.NOTIFY_BOT.getName())) {
-            return Service.NOTIFY_BOT;
-        } else if (callData.equals(Service.INTERNAL_BOT.getName())) {
-            return Service.INTERNAL_BOT;
-        } else if (callData.equals(Service.INTEGRATION_BOT.getName())) {
-            return Service.INTEGRATION_BOT;
-        } else {
-            return Service.ANOTHER_CHOICE;
-        }
     }
 
 }

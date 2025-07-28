@@ -1,10 +1,8 @@
 package com.mybot.bot;
 
-import com.mybot.model.BotQuery;
 import com.mybot.model.Step;
 import com.mybot.model.UserSession;
 import com.mybot.service.BotService;
-import com.mybot.util.InlineKeyboardUtil;
 import com.mybot.util.MessageExecutorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +10,6 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-
-import java.util.List;
 
 @Slf4j
 @Component
@@ -35,6 +29,8 @@ public class BotCommandHandler {
         var msg = update.getMessage();
         Long chatId = msg.getChatId();
         UserSession session = botService.session(chatId);
+
+        String firstName = msg.getFrom().getFirstName() == null ? "" : msg.getFrom().getFirstName();
 
         String userFullName = msg.getFrom().getFirstName() + " " + msg.getFrom().getLastName();
 

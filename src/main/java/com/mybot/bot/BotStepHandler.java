@@ -6,13 +6,15 @@ import com.mybot.model.UserSession;
 import com.mybot.service.BotService;
 import com.mybot.util.InlineKeyboardUtil;
 import com.mybot.util.MessageExecutorUtil;
+import com.mybot.util.ServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Contact;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 
 @Slf4j
 @Component
@@ -35,15 +37,16 @@ public class BotStepHandler {
                 .parseMode("Markdown")
                 .build();
 
-        boolean isEdit = false;
+        boolean isEdit = session.isEdit();
         boolean isQuery = false;
         log.info("session {}", session);
         switch (session.getStep()) {
             case NONE, START -> isQuery = handleStart(update, bot, text, session, reply);
             case TASK_DESCRIPTION -> handleTaskDescription(text, session, reply, isEdit);
             case NAME -> handleName(text, session, reply, isEdit);
-            case PHONE -> handlePhone(text, session, reply, isEdit);
+            case PHONE -> handlePhone(msg, text, session, reply, isEdit);
             case PROMOCODE -> handlePromocode(text, session, reply, isEdit);
+            case SERVICE -> handleService(text, session, reply);
             case SAVE_OR_EDIT -> handleSaveOrEdit(chatId, text, session, reply);
             case EDIT -> handleEdit(text, session, reply);
             case MAIN_MENU -> handleMainMenu(reply);
@@ -104,8 +107,17 @@ public class BotStepHandler {
             reply.setReplyMarkup(keyboards.skip());
         } else {
             session.setServiceDescription(!"Пропустить".equals(text) ? text : "");
-            reply.setText("3. Введите ваше имя");
-            session.setStep(Step.NAME);
+            if (isEdit) {
+                session.setEdit(false);
+                setApplicationText(session, reply);
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.getApplicationButtons());
+                session.setStep(Step.SAVE_OR_EDIT);
+            } else {
+                reply.setText("3. Введите ваше имя");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                session.setStep(Step.NAME);
+            }
         }
     }
 
@@ -115,48 +127,100 @@ public class BotStepHandler {
             reply.setReplyMarkup(keyboards.removeKeyboard());
         } else {
             session.setName(text);
-            reply.setText("4. Укажите ваш номер телефона или нажмите кнопку поделиться контактом");
-            reply.setReplyMarkup(keyboards.removeKeyboard());
-            reply.setReplyMarkup(keyboards.contactButton());
-            session.setStep(Step.PHONE);
+            if (isEdit) {
+                session.setEdit(false);
+                setApplicationText(session, reply);
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.getApplicationButtons());
+                session.setStep(Step.SAVE_OR_EDIT);
+            } else {
+                reply.setText("4. Укажите ваш номер телефона или нажмите кнопку поделиться контактом");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.contactButton());
+                session.setStep(Step.PHONE);
+            }
         }
     }
 
-    private void handlePhone(String text, UserSession session, SendMessage reply, boolean isEdit) {
-        if (!text.matches("^\\+?\\d{10,13}$") || (!text.startsWith("+7") && !text.startsWith("8"))) {
+    private void handlePhone(Message message, String text, UserSession session, SendMessage reply, boolean isEdit) {
+        if (message.hasContact()) {
+            Contact contact = message.getContact();
+            session.setPhone(contact.getPhoneNumber());
+            if (isEdit) {
+                session.setEdit(false);
+                setApplicationText(session, reply);
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.getApplicationButtons());
+                session.setStep(Step.SAVE_OR_EDIT);
+            } else {
+                reply.setText("5. Введите промокод или нажмите пропустить");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.skip());
+                session.setStep(Step.PROMOCODE);
+            }
+        } else if (!text.matches("^\\+?\\d{10,13}$") || (!text.startsWith("+7") && !text.startsWith("8"))) {
             reply.setText("❌ Неверный формат. Пример: +71234567890");
         } else {
             session.setPhone(text);
-            reply.setText("5. Введите промокод или нажмите пропустить");
+            if (isEdit) {
+                session.setEdit(false);
+                setApplicationText(session, reply);
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.getApplicationButtons());
+                session.setStep(Step.SAVE_OR_EDIT);
+            } else {
+                reply.setText("5. Введите промокод или нажмите пропустить");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.skip());
+                session.setStep(Step.PROMOCODE);
+            }
+        }
+    }
+
+    private void handleService(String text, UserSession session, SendMessage reply) {
+        if (!ServiceUtil.isServiceByDiscription(text)) {
+            reply.setText("❌ Выберете одну из услуг ниже.");
+        } else {
+            session.setService(text);
+            session.setEdit(false);
+            setApplicationText(session, reply);
             reply.setReplyMarkup(keyboards.removeKeyboard());
-            reply.setReplyMarkup(keyboards.skip());
-            session.setStep(Step.PROMOCODE);
+            reply.setReplyMarkup(keyboards.getApplicationButtons());
+            session.setStep(Step.SAVE_OR_EDIT);
         }
     }
 
     private void handleEdit(String text, UserSession session, SendMessage reply) {
-        if ("Имя".equals(text)) {
-            reply.setText("3. Введите ваше имя");
-            session.setStep(Step.NAME);
-        } else if ("Телефон".equals(text)) {
-            reply.setText("4. Укажите ваш номер телефона или нажмите кнопку поделиться контактом");
-            reply.setReplyMarkup(keyboards.removeKeyboard());
-            reply.setReplyMarkup(keyboards.contactButton());
-            session.setStep(Step.PHONE);
-        } else if ("Услуга".equals(text)) {
-
-        } else if ("Описание услуги".equals(text)) {
-            reply.setText("2. Кратко опишите задачу, или нажмите кнопку пропустить (Не более 500 символов)");
-            reply.setReplyMarkup(keyboards.removeKeyboard());
-            reply.setReplyMarkup(keyboards.skip());
-            session.setStep(Step.TASK_DESCRIPTION);
-        } else if ("Промокод".equals(text)) {
-            reply.setText("5. Введите промокод или нажмите пропустить");
-            reply.setReplyMarkup(keyboards.removeKeyboard());
-            reply.setReplyMarkup(keyboards.skip());
-            session.setStep(Step.PROMOCODE);
-        } else {
-            reply.setText("❌ Пожалуйста, выберете одно из действий ниже.");
+        switch (text) {
+            case "Имя" -> {
+                reply.setText("3. Введите ваше имя");
+                session.setStep(Step.NAME);
+            }
+            case "Телефон" -> {
+                reply.setText("4. Укажите ваш номер телефона или нажмите кнопку поделиться контактом");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.contactButton());
+                session.setStep(Step.PHONE);
+            }
+            case "Услуга" -> {
+                reply.setText("1. Выберите услугу");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.serviceMenu());
+                session.setStep(Step.SERVICE);
+            }
+            case "Описание услуги" -> {
+                reply.setText("2. Кратко опишите задачу, или нажмите кнопку пропустить (Не более 500 символов)");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.skip());
+                session.setStep(Step.TASK_DESCRIPTION);
+            }
+            case "Промокод" -> {
+                reply.setText("5. Введите промокод или нажмите пропустить");
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.skip());
+                session.setStep(Step.PROMOCODE);
+            }
+            case null, default -> reply.setText("❌ Пожалуйста, выберете одно из действий ниже.");
         }
     }
 
@@ -165,9 +229,17 @@ public class BotStepHandler {
 
         } else {
             session.setPromocode(!"Пропустить".equals(text) ? text : "");
-            setApplicationText(session, reply);
-            reply.setReplyMarkup(keyboards.getApplicationButtons());
-            session.setStep(Step.SAVE_OR_EDIT);
+            if (isEdit) {
+                session.setEdit(false);
+                setApplicationText(session, reply);
+                reply.setReplyMarkup(keyboards.removeKeyboard());
+                reply.setReplyMarkup(keyboards.getApplicationButtons());
+                session.setStep(Step.SAVE_OR_EDIT);
+            } else {
+                setApplicationText(session, reply);
+                reply.setReplyMarkup(keyboards.getApplicationButtons());
+                session.setStep(Step.SAVE_OR_EDIT);
+            }
         }
     }
 
@@ -175,15 +247,15 @@ public class BotStepHandler {
         if ("Сохранить".equals(text)) {
             botService.save(chatId);
             reply.setText("""
-                        ✅ Заявка сохранена.
+                    ✅ Заявка сохранена.
                     
-                        👤 Имя: %s
-                        📞 Телефон: %s
-                        📌 Услуга: %s
-                        Описание услуги: %s
-                        Промокод: %s
+                    👤 Имя: %s
+                    📞 Телефон: %s
+                    📌 Услуга: %s
+                    Описание услуги: %s
+                    Промокод: %s
                     
-                        🔁 Оставьте ещё заявку или узнайте про услуги!
+                    🔁 Оставьте ещё заявку или узнайте про услуги!
                     """.formatted(session.getName(), session.getPhone(),
                     session.getService(), session.getServiceDescription(), session.getPromocode()));
             reply.setReplyMarkup(keyboards.mainMenu2());

@@ -31,6 +31,8 @@ public class BotService {
                 s.getName(),
                 s.getPhone(),
                 s.getService(),
+                s.getServiceDescription(),
+                s.getPromocode(),
                 LocalDateTime.now().toString()
         ));
         sessions.remove(chatId);

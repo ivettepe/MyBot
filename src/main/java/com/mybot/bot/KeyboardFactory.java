@@ -1,6 +1,7 @@
 package com.mybot.bot;
 
 import com.mybot.model.BotQuery;
+import com.mybot.model.Service;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -66,10 +67,17 @@ public class KeyboardFactory {
 
     public ReplyKeyboard serviceMenu() {
         return markup(List.of(
-                row("🤖 Разработка Telegram-ботов"),
-                row("🧩 Создание Mini Apps"),
-                row("🔧 Сопровождение и доработка"),
-                row("💡 Консультации и проектирование")
+                row(Service.INFO_BOT.getDescription()),
+                row(Service.SERVICE_BOT.getDescription()),
+                row(Service.AI_BOT.getDescription()),
+                row(Service.QUIZ_BOT.getDescription()),
+                row(Service.SHOP_BOT.getDescription()),
+                row(Service.MINI_APPS.getDescription()),
+                row(Service.ADMIN_BOT.getDescription()),
+                row(Service.NOTIFY_BOT.getDescription()),
+                row(Service.INTERNAL_BOT.getDescription()),
+                row(Service.INTEGRATION_BOT.getDescription()),
+                row(Service.ANOTHER_CHOICE.getDescription())
         ), true);
     }
 
